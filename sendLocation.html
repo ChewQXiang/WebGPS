@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>位置上傳</title> 
+</head>
+<body>
+  <h1>📍 位置自動上傳中…</h1>
+  <p id="status">等待定位中...</p> <!-- 顯示目前狀態 -->
+
+  <script>
+    // 之後要更改為電腦連線地方的ip位置
+    const serverUrl = "http://192.168.0.101:8080/updateLocation";
+
+    // 設定每位使用者/隊友不同的 ID
+    const deviceId = "user003"; // 手動設每一個成員的ID
+    // 處理定位成功後，將資料打包並傳送至後端
+    function uploadLocation(position) {
+      const data = {
+        id: deviceId,
+        lat: position.coords.latitude,     // 緯度
+        lon: position.coords.longitude,    // 經度
+        time: new Date().toLocaleString("sv-SE", { timeZone: "Asia/Taipei" })  //把時區設在UTC+8的台北時間
+      };
+
+      // 使用 fetch 傳送 POST 請求（JSON 格式）
+      fetch(serverUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      })
+      .then(() => {
+        // 上傳成功後更新畫面文字
+        document.getElementById("status").innerText =
+          `已上傳：${data.lat.toFixed(5)}, ${data.lon.toFixed(5)} (${data.time})`;
+      })
+      .catch(err => {
+        // 若發生錯誤，顯示錯誤訊息
+        document.getElementById("status").innerText = "上傳失敗：" + err;
+      });
+    }
+
+    // 請求取得目前位置，成功就呼叫 uploadLocation，失敗就顯示錯誤
+    function locateAndSend() {
+      navigator.geolocation.getCurrentPosition(uploadLocation, err => {
+        document.getElementById("status").innerText = "定位失敗：" + err.message;
+      });
+    }
+
+    // ⏱ 頁面載入後先執行一次，然後每 100 秒更新一次
+    locateAndSend();
+    setInterval(locateAndSend, 100000); // 單位為毫秒（100 秒 = 100000 毫秒）
+  </script>
+</body>
+</html>

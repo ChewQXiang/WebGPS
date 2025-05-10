@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>多人位置共享地圖</title> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> <!-- 響應式設定 -->
+  
+  <!-- 引入 Leaflet 的 CSS（開源地圖框架） -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    /* 地圖容器全螢幕高度 */
+    #map { height: 100vh; }
+  </style>
+</head>
+
+<body>
+  <!-- 地圖畫面容器 -->
+  <div id="map"></div>
+
+  <!-- 引入 Leaflet 的 JS 函式庫 -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+    // 初始化地圖物件，設在台灣中部座標 [緯度, 經度]，縮放等級 7
+    const map = L.map('map').setView([23.5, 121], 7);
+
+    // 加入 OpenStreetMap 地圖圖層
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap' // 地圖版權標註
+    }).addTo(map);
+
+    // 建立一個 Map 物件來儲存所有使用者的 marker（以 ID 為 key）
+    const markers = new Map();
+
+    // 從後端獲取所有位置資料並更新地圖
+    function updatePositions() {
+      fetch('http://192.168.0.101:8080/positions') // 之後依連線後的ip
+        .then(res => res.json()) // 將回傳的 JSON 字串轉為物件
+        .then(data => {
+          data.forEach(user => {
+            const { id, lat, lon, time } = user; // 解構每個使用者的位置資訊
+
+            // 如果此 ID 的 marker 已存在，就更新位置與 popup
+            if (markers.has(id)) {
+              markers.get(id).setLatLng([lat, lon]); // 更新座標
+              markers.get(id).bindPopup(`${id}<br>${time}`); // 更新 popup 內容
+            } else {
+              // 否則建立新的 marker 加到地圖上
+              const marker = L.marker([lat, lon]).addTo(map);
+              marker.bindPopup(`${id}<br>${time}`); // 顯示 ID 與時間
+              markers.set(id, marker); // 加入到 Map 中做管理
+            }
+          });
+        });
+    }
+
+    // 初次載入就更新一次
+    updatePositions();
+
+    // 每 30 秒定時更新地圖上的位置資訊
+    setInterval(updatePositions, 30000);
+  </script>
+</body>
+</html>
