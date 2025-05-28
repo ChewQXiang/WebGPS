@@ -35,7 +35,7 @@
 
     // 從後端獲取所有位置資料並更新地圖
     function updatePositions() {
-      fetch('http://192.168.0.101:8080/positions') // 之後依連線後的ip
+      fetch('http://yourIP:8080/positions') // 之後依連線後的ip
         .then(res => res.json()) // 將回傳的 JSON 字串轉為物件
         .then(data => {
           data.forEach(user => {
